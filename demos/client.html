@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Basic Handler | Jcrop Demo</title>
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+    <link rel="stylesheet" href="demo_files/main.css" type="text/css" />
+    <link rel="stylesheet" href="demo_files/demos.css" type="text/css" />
+    <link rel="stylesheet" href="../css/jquery.Jcrop.css" type="text/css" />
+    <style>
+      img {
+        max-width: 600px;
+        max-height: 500px;
+      }
+    </style>
+</head>
+<body>
+    <input type="file">
+    <input type="button" value="剪裁并上传">
+    <img src="" id="target" />
+    <script src="../js/jquery.min.js"></script>
+    <script src="../js/jquery.Jcrop.js"></script>
+    <script type="text/javascript">
+    jQuery(function($) {
+        var $img = $('#target');
+        var p = 0;
+        var jcrop_api;
+        $('input[type="file"]').on('change', function(e) {
+            var files = this.files;
+            if (files.length > 0) {
+                fileReader = new FileReader();
+                fileReader.onload = function(e) {
+                    $img.attr('src', e.target.result);
+                        $('#target').Jcrop({
+                            onSelect: selected,
+                            aspectRatio: 600 / 500
+                        }, function() {
+                            jcrop_api = this;
+                        });
+
+                        function selected(pos){
+                            p = pos;
+                        }
+
+                };
+                fileReader.readAsDataURL(files[0]);
+                if(jcrop_api) {
+                    jcrop_api.destroy();
+                    $img.removeAttr('style');
+                }
+            }; 
+        });
+        function cut(){
+            var imageHeight = $img[0].height;
+            var imageElementHeight = $img.height();
+            var s = imageHeight / imageElementHeight;
+            var canvas = document.createElement('canvas');
+            canvas.height = 500;
+            canvas.width = 600;
+            var ctx = canvas.getContext('2d');
+            ctx.drawImage($img[0], p.x * s, p.y * s, p.w * s, p.h * s, 0, 0, 600, 500);
+            $.ajax({
+              url: 'save.php',
+              method: 'post',
+              data: canvas.toDataURL(),
+              success: function(data){
+                  console.log(data)
+              }
+            });
+        }
+        $('input[type="button"]').on('click', cut);
+    });
+    </script>
+</body>
+</html>
